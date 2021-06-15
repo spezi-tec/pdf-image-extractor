@@ -1,8 +1,11 @@
 package text_extractor
 
 import (
+	"archive/zip"
+	"bytes"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,48 +14,147 @@ import (
 	"gopkg.in/gographics/imagick.v2/imagick"
 )
 
+// Dependencies structure for holding tesseract client and
+// imagemagick magickwand
+type Dependencies struct {
+	Client    *gosseract.Client
+	MagicWand *imagick.MagickWand
+}
+
 // ExtractTextFromPDF will take a fbase64 string of a pdf file and convert the file into an
 // image which has its contents extracted via tesseract. It will create the image as a
 // high resolution jpg file with minimal compression.
-func ExtractTextFromPDF(base64PDF string) (string, error) {
-	client := gosseract.NewClient()
-	client.SetLanguage("por")
+func ExtractDataFromPDF(base64PDF string, callback func(dependencies *Dependencies) (interface{}, error)) (interface{}, error) {
+	dependencies := Dependencies{}
 
-	// Setup
-	imagick.Initialize()
-	defer imagick.Terminate()
-
-	mw := imagick.NewMagickWand()
-	defer mw.Destroy()
-
-	//adding default config to mw image
-	if err := SetupImage(base64PDF, mw); err != nil {
-		fmt.Println(err)
+	if err := SetupDependencies(&dependencies, base64PDF); err != nil {
 		return "", err
 	}
 
+	// Removing Setup Structures when method returns
+	defer imagick.Terminate()
+	defer dependencies.MagicWand.Destroy()
+
+	data, err := callback(&dependencies)
+	if err != nil {
+		return "", err
+	}
+
+	return data, nil
+}
+
+func TextArrayFromImages(dependencies *Dependencies) (interface{}, error) {
 	var imageName string
-	var pdfText string = ""
+	var data []string
 
 	// Iterate over PDF pages
-	for i := 0; i < int(mw.GetNumberImages()); i++ {
+	for i := 0; i < int(dependencies.MagicWand.GetNumberImages()); i++ {
 		// Set Page Index
-		mw.SetIteratorIndex(i)
+		dependencies.MagicWand.SetIteratorIndex(i)
 		imageName = fmt.Sprintf("pdf_page_%v.jpg", i)
 		// Save Image
-		if err := mw.WriteImage(imageName); err != nil {
+		if err := dependencies.MagicWand.WriteImage(imageName); err != nil {
+			return make([]string, 0), err
+		}
+
+		text, err := ExtractTextFromImage(dependencies.Client, imageName)
+		if err != nil {
+			return make([]string, 0), err
+		}
+
+		data = append(data, text)
+	}
+
+	return data, nil
+}
+
+func TextFromImages(dependencies *Dependencies) (interface{}, error) {
+	var imageName string
+	var data string = ""
+
+	// Iterate over PDF pages
+	for i := 0; i < int(dependencies.MagicWand.GetNumberImages()); i++ {
+		// Set Page Index
+		dependencies.MagicWand.SetIteratorIndex(i)
+		imageName = fmt.Sprintf("pdf_page_%v.jpg", i)
+		// Save Image
+		if err := dependencies.MagicWand.WriteImage(imageName); err != nil {
 			return "", err
 		}
 
-		text, err := ExtractTextFromImage(client, imageName)
+		text, err := ExtractTextFromImage(dependencies.Client, imageName)
 		if err != nil {
 			return "", err
 		}
 
-		pdfText += text
+		data += text
 	}
 
-	return pdfText, nil
+	return data, nil
+}
+
+func ZippedImages(dependencies *Dependencies) (interface{}, error) {
+	var imageName string
+
+	// Create a buffer to write our archive to.
+	buf := new(bytes.Buffer)
+
+	// Create a new zip archive.
+	w := zip.NewWriter(buf)
+
+	// Iterate over PDF pages
+	for i := 0; i < int(dependencies.MagicWand.GetNumberImages()); i++ {
+		// Set Page Index
+		dependencies.MagicWand.SetIteratorIndex(i)
+		imageName = fmt.Sprintf("pdf_page_%v.jpg", i)
+		// Save Image
+		if err := dependencies.MagicWand.WriteImage(imageName); err != nil {
+			return "", err
+		}
+
+		file, err := os.Open(imageName)
+		if err != nil {
+			return "", err
+		}
+
+		defer file.Close()
+
+		f, err := w.Create(imageName)
+		if err != nil {
+			return "", err
+		}
+
+		if _, err := io.Copy(f, file); err != nil {
+			return "", err
+		}
+	}
+
+	err := w.Close()
+	if err != nil {
+		return "", err
+	}
+	//TODO search for memory leak
+	return buf.Bytes(), nil
+
+}
+
+// SetupDependencies will take a Dependencies structure and populate it
+func SetupDependencies(dependencies *Dependencies, base64PDF string) error {
+	// Initializing Tesseract Client
+	dependencies.Client = gosseract.NewClient()
+	dependencies.Client.SetLanguage("por")
+
+	imagick.Initialize()
+
+	// creates new imagimmagick magiwand
+	dependencies.MagicWand = imagick.NewMagickWand()
+	//adding default config to mw image
+	if err := SetupImage(base64PDF, dependencies.MagicWand); err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	return nil
 }
 
 // ExtractTextFromPDF will take a filename of a pdf file and convert the file into an
