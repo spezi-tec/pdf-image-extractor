@@ -28,7 +28,7 @@ func ExtractDataFromPDF(base64PDF string, callback func(dependencies *Dependenci
 	dependencies := Dependencies{}
 
 	if err := SetupDependencies(&dependencies, base64PDF); err != nil {
-		return "", err
+		return "", fmt.Errorf("error while setting up dependencies: %w", err)
 	}
 
 	// Removing Setup Structures when method returns
@@ -37,7 +37,7 @@ func ExtractDataFromPDF(base64PDF string, callback func(dependencies *Dependenci
 
 	data, err := callback(&dependencies)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error while extracting data: %w", err)
 	}
 
 	return data, nil
@@ -54,12 +54,12 @@ func TextArrayFromImages(dependencies *Dependencies) (interface{}, error) {
 		imageName = fmt.Sprintf("pdf_page_%v.jpg", i)
 		// Save Image
 		if err := dependencies.MagicWand.WriteImage(imageName); err != nil {
-			return make([]string, 0), err
+			return make([]string, 0), fmt.Errorf("error while writing image: %w", err)
 		}
 
 		text, err := ExtractTextFromImage(dependencies.Client, imageName)
 		if err != nil {
-			return make([]string, 0), err
+			return make([]string, 0), fmt.Errorf("error while extracting text from image: %w", err)
 		}
 
 		data = append(data, text)
@@ -79,12 +79,12 @@ func TextFromImages(dependencies *Dependencies) (interface{}, error) {
 		imageName = fmt.Sprintf("pdf_page_%v.jpg", i)
 		// Save Image
 		if err := dependencies.MagicWand.WriteImage(imageName); err != nil {
-			return "", err
+			return "", fmt.Errorf("error while writing image: %w", err)
 		}
 
 		text, err := ExtractTextFromImage(dependencies.Client, imageName)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("error while extracting text from image: %w", err)
 		}
 
 		data += text
@@ -109,29 +109,29 @@ func ZippedImages(dependencies *Dependencies) (interface{}, error) {
 		imageName = fmt.Sprintf("pdf_page_%v.jpg", i)
 		// Save Image
 		if err := dependencies.MagicWand.WriteImage(imageName); err != nil {
-			return "", err
+			return "", fmt.Errorf("error while writing image: %w", err)
 		}
 
 		file, err := os.Open(imageName)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("error while openning image: %w", err)
 		}
 
 		defer file.Close()
 
 		f, err := w.Create(imageName)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("error while adding image to zip: %w", err)
 		}
 
 		if _, err := io.Copy(f, file); err != nil {
-			return "", err
+			return "", fmt.Errorf("error while adding image content to zip: %w", err)
 		}
 	}
 
 	err := w.Close()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("error while closing zip writer: %w", err)
 	}
 	//TODO search for memory leak
 	return buf.Bytes(), nil
@@ -151,7 +151,7 @@ func SetupDependencies(dependencies *Dependencies, base64PDF string) error {
 	//adding default config to mw image
 	if err := SetupImage(base64PDF, dependencies.MagicWand); err != nil {
 		fmt.Println(err)
-		return err
+		return fmt.Errorf("error while setting up image: %w", err)
 	}
 
 	return nil

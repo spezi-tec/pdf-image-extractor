@@ -14,6 +14,8 @@ COPY policy.xml /etc/ImageMagick-6/
 COPY . .
 
 RUN go get -d -v ./...
-RUN go install -v ./...
+RUN go build -o ./out/pdf_text_extractor .
 
-CMD ["pdf_text_extractor"]
+EXPOSE 8080
+
+CMD ["./out/pdf_text_extractor"]
