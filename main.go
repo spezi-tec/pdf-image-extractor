@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	text_extractor "gitlab.com/spezi/services/pdf_text_extractor/pkg"
 )
 
@@ -17,22 +16,16 @@ func main() {
 		}
 	}()
 
-	router := mux.NewRouter()
-
-	router.HandleFunc("/", handler).Queries("pdf", "{pdf}", "data-format", "{data-format}").Methods("GET")
-
 	log.Print("Listening")
-
-	// servePath := fmt.Sprintf(":8080")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	http.HandleFunc("/", handler)
+	http.ListenAndServe(":8080", nil)
 
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
-	pdf := params["pdf"]
-	dataFormat := params["data-format"]
 
+	pdf := r.URL.Query().Get("pdf")
+	dataFormat := r.URL.Query().Get("data-format")
 	var data interface{}
 	var err error = nil
 
@@ -41,7 +34,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		data, err = text_extractor.ExtractDataFromPDF(pdf, text_extractor.ZippedImages)
 		if err != nil {
 			log.Fatal(err)
-			return
 		}
 
 		w.Header().Set("Content-Type", "application/zip")
@@ -58,7 +50,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		log.Fatal(err)
-		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
