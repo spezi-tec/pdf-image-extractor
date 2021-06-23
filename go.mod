@@ -3,6 +3,7 @@ module gitlab.com/spezi/services/pdf_text_extractor
 go 1.14
 
 require (
+	github.com/gorilla/mux v1.8.0
 	github.com/otiai10/gosseract v2.2.1+incompatible
 	github.com/otiai10/mint v1.3.2 // indirect
 	golang.org/x/net v0.0.0-20210521195947-fe42d452be8f // indirect

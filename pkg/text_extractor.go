@@ -54,12 +54,12 @@ func TextArrayFromImages(dependencies *Dependencies) (interface{}, error) {
 		imageName = fmt.Sprintf("pdf_page_%v.jpg", i)
 		// Save Image
 		if err := dependencies.MagicWand.WriteImage(imageName); err != nil {
-			return make([]string, 0), fmt.Errorf("error while writing image: %w", err)
+			return "", fmt.Errorf("error while writing image: %w", err)
 		}
 
 		text, err := ExtractTextFromImage(dependencies.Client, imageName)
 		if err != nil {
-			return make([]string, 0), fmt.Errorf("error while extracting text from image: %w", err)
+			return "", fmt.Errorf("error while extracting text from image: %w", err)
 		}
 
 		data = append(data, text)
