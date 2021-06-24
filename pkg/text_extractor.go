@@ -2,11 +2,13 @@ package text_extractor
 
 import (
 	"archive/zip"
+	"bufio"
 	"bytes"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -19,6 +21,22 @@ import (
 type Dependencies struct {
 	Client    *gosseract.Client
 	MagicWand *imagick.MagickWand
+}
+
+// ResultData takes the type and returns extracted content from pdf
+func ResultData(dataType string) {
+
+}
+
+// EncodeFileB64 will take a file and encode it's contents to a base64 string
+func EncodeFileB64(file io.Reader) string {
+	reader := bufio.NewReader(file)
+	fileBytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return base64.StdEncoding.EncodeToString(fileBytes)
 }
 
 // ExtractTextFromPDF will take a fbase64 string of a pdf file and convert the file into an
@@ -117,8 +135,6 @@ func ZippedImages(dependencies *Dependencies) (interface{}, error) {
 			return "", fmt.Errorf("error while openning image: %w", err)
 		}
 
-		defer file.Close()
-
 		f, err := w.Create(imageName)
 		if err != nil {
 			return "", fmt.Errorf("error while adding image to zip: %w", err)
@@ -127,6 +143,17 @@ func ZippedImages(dependencies *Dependencies) (interface{}, error) {
 		if _, err := io.Copy(f, file); err != nil {
 			return "", fmt.Errorf("error while adding image content to zip: %w", err)
 		}
+
+		err = file.Close()
+		if err != nil {
+			return "", fmt.Errorf("error while closing image file: %w", err)
+		}
+
+		err = os.Remove(imageName)
+		if err != nil {
+			return "", fmt.Errorf("error removing image file: %w", err)
+		}
+
 	}
 
 	err := w.Close()
