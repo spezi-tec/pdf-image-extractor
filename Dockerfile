@@ -1,12 +1,12 @@
-FROM golang:1.16-alpine 
+FROM golang:1.16 
 
 WORKDIR /go/src/gitlab.com/spezi/services/pdf_text_extractor
 
-RUN apk update;
-RUN apk add --no-cache g++ \
-                       tesseract-ocr-dev~=4.1 \
-                       tesseract-ocr-data-por~=4.1 \
-                       imagemagick6-dev \
+RUN apt-get update;
+RUN apt-get install -y libtesseract-dev \
+                       tesseract-ocr-por \
+                       libmagickwand-dev \
+                       imagemagick-6.q16 \
                        ghostscript;
 
 COPY policy.xml /etc/ImageMagick-6/
@@ -14,6 +14,6 @@ COPY policy.xml /etc/ImageMagick-6/
 COPY . .
 
 RUN go get -d -v ./...
-RUN go build -o ./out/pdf_text_extractor .
+RUN GOOS=linux go build -a -o pdf_text_extractor .
 
-CMD ["./out/pdf_text_extractor"]
+CMD ["./pdf_text_extractor"]

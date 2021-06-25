@@ -30,10 +30,11 @@ func ResultData(dataType string) {
 
 // EncodeFileB64 will take a file and encode it's contents to a base64 string
 func EncodeFileB64(file io.Reader) string {
+
 	reader := bufio.NewReader(file)
 	fileBytes, err := ioutil.ReadAll(reader)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 
 	return base64.StdEncoding.EncodeToString(fileBytes)
@@ -43,6 +44,7 @@ func EncodeFileB64(file io.Reader) string {
 // image which has its contents extracted via tesseract. It will create the image as a
 // high resolution jpg file with minimal compression.
 func ExtractDataFromPDF(base64PDF string, callback func(dependencies *Dependencies) (interface{}, error)) (interface{}, error) {
+
 	dependencies := Dependencies{}
 
 	if err := SetupDependencies(&dependencies, base64PDF); err != nil {
@@ -62,6 +64,7 @@ func ExtractDataFromPDF(base64PDF string, callback func(dependencies *Dependenci
 }
 
 func TextArrayFromImages(dependencies *Dependencies) (interface{}, error) {
+
 	var imageName string
 	var data []string
 
@@ -87,6 +90,7 @@ func TextArrayFromImages(dependencies *Dependencies) (interface{}, error) {
 }
 
 func TextFromImages(dependencies *Dependencies) (interface{}, error) {
+
 	var imageName string
 	var data string = ""
 
@@ -112,6 +116,7 @@ func TextFromImages(dependencies *Dependencies) (interface{}, error) {
 }
 
 func ZippedImages(dependencies *Dependencies) (interface{}, error) {
+
 	var imageName string
 
 	// Create a buffer to write our archive to.
@@ -167,6 +172,7 @@ func ZippedImages(dependencies *Dependencies) (interface{}, error) {
 
 // SetupDependencies will take a Dependencies structure and populate it
 func SetupDependencies(dependencies *Dependencies, base64PDF string) error {
+
 	// Initializing Tesseract Client
 	dependencies.Client = gosseract.NewClient()
 	dependencies.Client.SetLanguage("por")
@@ -186,6 +192,7 @@ func SetupDependencies(dependencies *Dependencies, base64PDF string) error {
 
 // ExtractTextFromPDF will take a filename of a pdf file and convert the file into an
 func SetupImage(base64PDF string, mw *imagick.MagickWand) error {
+
 	dec, err := base64.StdEncoding.DecodeString(base64PDF)
 	if err != nil {
 		return err
@@ -195,6 +202,7 @@ func SetupImage(base64PDF string, mw *imagick.MagickWand) error {
 	if err != nil {
 		return err
 	}
+	defer file.Close()
 	defer os.Remove(file.Name())
 
 	if _, err := file.Write(dec); err != nil {
@@ -236,6 +244,7 @@ func SetupImage(base64PDF string, mw *imagick.MagickWand) error {
 }
 
 func ExtractTextFromImage(client *gosseract.Client, imageName string) (string, error) {
+
 	defer os.Remove(imageName)
 
 	client.SetImage(imageName)

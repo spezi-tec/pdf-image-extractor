@@ -10,12 +10,6 @@ import (
 )
 
 func main() {
-	defer func() {
-		if r := recover(); r != nil {
-			err := r.(error)
-			log.Fatal(err)
-		}
-	}()
 
 	log.Print("Listening")
 	http.HandleFunc("/", handler)
@@ -24,6 +18,7 @@ func main() {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
+
 	switch r.Method {
 	case "GET":
 		base64Handler(w, r)
@@ -33,6 +28,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func fileHandler(w http.ResponseWriter, r *http.Request) {
+
 	dataFormat := r.URL.Query().Get("data-format")
 
 	// Parse our multipart form, 10 << 20 specifies a maximum
@@ -60,7 +56,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 	case "zip":
 		data, err = text_extractor.ExtractDataFromPDF(pdf, text_extractor.ZippedImages)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 
 		w.Header().Set("Content-Type", "application/zip")
@@ -77,7 +73,7 @@ func fileHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -96,7 +92,7 @@ func base64Handler(w http.ResponseWriter, r *http.Request) {
 	case "zip":
 		data, err = text_extractor.ExtractDataFromPDF(pdf, text_extractor.ZippedImages)
 		if err != nil {
-			log.Fatal(err)
+			log.Print(err)
 		}
 
 		w.Header().Set("Content-Type", "application/zip")
@@ -112,7 +108,7 @@ func base64Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
