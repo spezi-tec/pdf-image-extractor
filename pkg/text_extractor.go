@@ -23,11 +23,6 @@ type Dependencies struct {
 	MagicWand *imagick.MagickWand
 }
 
-// ResultData takes the type and returns extracted content from pdf
-func ResultData(dataType string) {
-
-}
-
 // EncodeFileB64 will take a file and encode it's contents to a base64 string
 func EncodeFileB64(file io.Reader) string {
 
@@ -63,6 +58,7 @@ func ExtractDataFromPDF(base64PDF string, callback func(dependencies *Dependenci
 	return data, nil
 }
 
+// TextArrayFromImages returns array of text referencing pdf pages content
 func TextArrayFromImages(dependencies *Dependencies) (interface{}, error) {
 
 	var imageName string
@@ -89,6 +85,7 @@ func TextArrayFromImages(dependencies *Dependencies) (interface{}, error) {
 	return data, nil
 }
 
+// TextFromImages returns concatenated text referencing pdf pages content
 func TextFromImages(dependencies *Dependencies) (interface{}, error) {
 
 	var imageName string
@@ -115,6 +112,7 @@ func TextFromImages(dependencies *Dependencies) (interface{}, error) {
 	return data, nil
 }
 
+// ZippedImages returns zip file containing images extracted from pdf
 func ZippedImages(dependencies *Dependencies) (interface{}, error) {
 
 	var imageName string
@@ -190,7 +188,7 @@ func SetupDependencies(dependencies *Dependencies, base64PDF string) error {
 	return nil
 }
 
-// ExtractTextFromPDF will take a filename of a pdf file and convert the file into an
+// SetupImage will take the pdf content and convert to jpg
 func SetupImage(base64PDF string, mw *imagick.MagickWand) error {
 
 	dec, err := base64.StdEncoding.DecodeString(base64PDF)
@@ -243,6 +241,7 @@ func SetupImage(base64PDF string, mw *imagick.MagickWand) error {
 	return nil
 }
 
+// ExtractTextFromImage extract text from image with tesseract
 func ExtractTextFromImage(client *gosseract.Client, imageName string) (string, error) {
 
 	defer os.Remove(imageName)

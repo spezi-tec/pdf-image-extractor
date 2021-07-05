@@ -1,9 +1,9 @@
-FROM golang:1.16 
+FROM golang:1.16
 
 WORKDIR /go/src/gitlab.com/spezi/services/pdf_text_extractor
 
 RUN apt-get update;
-RUN apt-get install -y libtesseract-dev \
+RUN apt-get install -y libtesseract-dev=4.0.0-2 \
                        tesseract-ocr-por \
                        libmagickwand-dev \
                        imagemagick-6.q16 \
